@@ -3,15 +3,25 @@ import React, { Component } from 'react';
 class Signin extends Component {
   state = {
     email: '',
-    password: ''
+    password: '',
+    error: '',
+    errorHappened: false
   };
 
   onChangeHandller = event => {
-    this.setState({ [event.target.name]: event.target.value });
+    this.setState({
+      [event.target.name]: event.target.value,
+      error: '',
+      errorHappened: false
+    });
+  };
+
+  saveAuthTokenInSession = token => {
+    window.sessionStorage.setItem('token', token);
   };
 
   onSubmitHandller = () => {
-    fetch('https://enigmatic-dawn-22140.herokuapp.com/signin', {
+    fetch('http://localhost:3000/signin', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -22,12 +32,29 @@ class Signin extends Component {
       })
     })
       .then(res => res.json())
-      .then(data => {
-        if (data.id) {
-          this.props.loadUserData(data);
-          this.props.onRouteChange('home');
+      .then(user => {
+        if (user.userId && user.msg === 'success') {
+          this.saveAuthTokenInSession(user.token);
+          fetch(`http://localhost:3000/profile/${user.userId}`, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${user.token}`
+            }
+          })
+            .then(data => data.json())
+            .then(user => {
+              if (user && user.email) {
+                this.props.loadUserData(user);
+                this.props.onRouteChange('home');
+              }
+            })
+            .catch(console.log);
+        } else {
+          this.setState({ error: user.error, errorHappened: true });
         }
-      });
+      })
+      .catch(console.log);
   };
   render() {
     return (
@@ -36,12 +63,17 @@ class Signin extends Component {
           <div className='measure'>
             <fieldset id='sign_up' className='ba b--transparent ph0 mh0'>
               <legend className='f1 fw6 ph0 mh0'>Sign In</legend>
+              {this.state.errorHappened && (
+                <div className='bg-dark-red white br4'>
+                  <p className='pa2'>{this.state.error}</p>
+                </div>
+              )}
               <div className='mt3'>
                 <label className='db fw6 lh-copy f6' htmlFor='email-address'>
                   Email
                 </label>
                 <input
-                  className='pa2 input-reset ba bg-transparent hover-bg-black hover-white w-100'
+                  className='pa2 input-reset ba bg-transparent hover-bg-black hover-white w-100 hover-black'
                   type='email'
                   name='email'
                   id='email-address'
@@ -53,7 +85,7 @@ class Signin extends Component {
                   Password
                 </label>
                 <input
-                  className='b pa2 input-reset ba bg-transparent hover-bg-black hover-white w-100'
+                  className='b pa2 input-reset ba bg-transparent hover-bg-black hover-white w-100 hover-black'
                   type='password'
                   name='password'
                   id='password'

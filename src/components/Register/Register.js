@@ -4,15 +4,22 @@ class Register extends Component {
   state = {
     name: '',
     email: '',
-    password: ''
+    password: '',
+    error: '',
+    errorHappened: false
   };
+
   onChangeHandller = event => {
-    this.setState({ [event.target.name]: event.target.value });
+    this.setState({
+      [event.target.name]: event.target.value,
+      errorHappened: false,
+      error: ''
+    });
   };
 
   onSubmitHandller = () => {
     //store user data in server
-    fetch('https://enigmatic-dawn-22140.herokuapp.com/register', {
+    fetch('http://localhost:3000/register', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -26,10 +33,12 @@ class Register extends Component {
     })
       .then(res => res.json())
       .then(user => {
-        if (user) {
+        if (user.error) {
+          this.setState({ error: user.error, errorHappened: true });
+        } else {
           //create function that store user data in app compnent state to load his information on profile screen
           this.props.loadUserData(user);
-          this.props.onRouteChange('home');
+          this.props.onRouteChange('signin');
         }
       });
   };
@@ -40,12 +49,17 @@ class Register extends Component {
           <div className='measure'>
             <fieldset id='sign_up' className='ba b--transparent ph0 mh0'>
               <legend className='f1 fw6 ph0 mh0'>Register</legend>
+              {this.state.errorHappened && (
+                <div className='bg-dark-red white br4'>
+                  <p className='pa2'>{this.state.error}</p>
+                </div>
+              )}
               <div className='mt3'>
                 <label className='db fw6 lh-copy f6' htmlFor='email-address'>
                   Name
                 </label>
                 <input
-                  className='pa2 input-reset ba bg-transparent hover-bg-black hover-white w-100'
+                  className='pa2 input-reset ba bg-transparent hover-bg-black hover-white w-100 hover-black'
                   type='text'
                   name='name'
                   id='name'
@@ -57,7 +71,7 @@ class Register extends Component {
                   Email
                 </label>
                 <input
-                  className='pa2 input-reset ba bg-transparent hover-bg-black hover-white w-100'
+                  className='pa2 input-reset ba bg-transparent hover-bg-black hover-white w-100 hover-black'
                   type='email'
                   name='email'
                   id='email-address'
@@ -69,7 +83,7 @@ class Register extends Component {
                   Password
                 </label>
                 <input
-                  className='b pa2 input-reset ba bg-transparent hover-bg-black hover-white w-100'
+                  className='b pa2 input-reset ba bg-transparent hover-bg-black hover-white w-100 hover-black'
                   type='password'
                   name='password'
                   id='password'
